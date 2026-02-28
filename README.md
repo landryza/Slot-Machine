@@ -1,90 +1,105 @@
 
-# Slot-Machine
-This program provides a fully interactive 5×3 slot machine built with Tkinter. It allows users to: Spin weighted reels, Adjust bets and paylines, View payouts through a paytable, Track credits, Highlight winning paylines, and Reset or quit the game cleanly.
+# Slot‑Machine (Tkinter) — Updated for Reel Strips
+
+This program provides a fully interactive **5×3 slot machine** built with Tkinter. It features:
+
+- Real **reel strips** (100‑stop reels) with controlled symbol frequencies  
+- Animated reel spins with staggered stopping  
+- Adjustable bets and paylines  
+- A full paytable window  
+- Highlighted winning paylines  
+- Credit tracking  
+- Reset, Help, and Quit functionality  
 
 ## 1. Start the Slot Machine
-Launches the Tkinter UI and initializes the reels, paytable, credits, and controls.
+Launching the program opens the Tkinter UI and initializes:
+
+- Reel strips (5 reels, each with 100 positions)  
+- Paytable multipliers for each symbol  
+- Default credits, bets, and paylines  
+- The slot grid (populated from reel strips)  
+- A persistent mini‑paytable on the right  
 
 ### How to Run
 ```
 python main.py
 ```
 
-When the program starts, a welcome pop‑up explains gameplay rules, controls, and benefits.
+A welcome pop‑up explains gameplay, controls, and rules.
 
-### What Happens on Startup
-- 200 starting credits
-- Bet/Line defaults to 2
-- 5 active paylines (out of 9 total)
-- Grid is randomized
-- Mini‑paytable visible on the right side
-- SPIN button ready for use
+### Startup Defaults
+- **200 credits**
+- **Bet/Line = 2**
+- **Active Lines = 5** (of 9 total)
+- **Grid randomized from reel strip stops**
+- **SPIN** button immediately available
 
 ## 2. Spin the Reels
-Performs a simulated slot machine spin with animated reels and weighted symbols.
+Spinning now uses **true reel‑strip physics**, not weighted random choices.
 
 ### User Action
-Click **SPIN** in the UI.
+Click **SPIN**.
 
-### Process
-- Total Bet = Bet/Line × Active Lines
-- Credits are deducted immediately
-- Each reel stops at staggered times
-- The game checks all active paylines for wins
-- Any winning lines are highlighted
+### What Happens
+- Total Bet = **Bet/Line × Active Lines**
+- Credits are deducted immediately  
+- Each reel **advances through its strip** at different speeds  
+- Reels stop sequentially (staggered stop ticks)  
+- The final visible 3 symbols per reel come from the reel strip:
+  ```
+  strip[(stop_index + row) % strip_length]
+  ```  
+- After all reels stop, the game evaluates the selected paylines  
+- Winning lines are highlighted in color
 
-### Winning Example Response in UI
+### Winning Example
 ```
 WIN! +40  (2 line(s))
 ```
 
-### Losing Example Response
+### Losing Example
 ```
 No win — try again!
 ```
 
-If credits reach 0:
+If credits reach zero:
 ```
 Out of credits! Press Reset.
 ```
 
 ## 3. Adjust Bet/Line
-Controls the per‑line wager.
+Controls your per‑line wager.
 
-### Buttons
-- **Bet -** decreases Bet/Line (min 1)
-- **Bet +** increases Bet/Line (max 20)
+### Controls
+- **Bet -** : Minimum 1  
+- **Bet +** : Maximum 20  
 
-### Effect on Gameplay
-Higher Bet/Line = higher potential payouts.
+Higher bets produce proportionally higher payouts.
 
 ## 4. Select Number of Paylines
-Uses a spinbox to choose how many paylines are active.
+A spinbox lets the user activate anywhere from **1 to 9 paylines**.
 
-### Control
-```
-Lines: [1–9]
-```
+More paylines:
+- Increase hit frequency  
+- Increase Total Bet  
+- Do **not** change the symbol distribution or reel behavior  
 
-### Effect
-- More lines → more chances to win
-- Also increases Total Bet before each spin
-
-### Total Bet Display Example
+### Example Display
 ```
 Total Bet: 10
 ```
 
 ## 5. View Paytable
-Opens a separate window containing:
-- All 5 symbols (🍒, 🍋, 🔔, ⭐, 7)
-- Payout multipliers for 3, 4, and 5 in a row
-- All 9 paylines in left‑to‑right order
+Shows a full payout reference, including:
+
+- All symbols (🍒, 🍋, 🔔, ⭐, 7)  
+- Multipliers for 3, 4, and 5 in a row  
+- All 9 paylines in order  
 
 ### User Action
 Click **Paytable**.
 
-### Paytable Example (per line)
+### Example (per line)
 ```
 🍋 → 3 in a row: Bet × 4
       4 in a row: Bet × 10
@@ -92,25 +107,24 @@ Click **Paytable**.
 ```
 
 ## 6. Help Menu
-Provides a readable explanation of all controls, including:
-- Credits
-- Bet/Line
-- Paylines
-- Total Bet
-- SPIN instructions
-- How wins are calculated
-- Reset / Quit behavior
+Displays a detailed explanation of:
+
+- Credits  
+- Bets  
+- Paylines  
+- Total Bet  
+- SPIN behavior  
+- How wins are calculated  
+- Reset/Quit rules  
 
 ### User Action
-Click **Help** to open the pop‑up.
+Click **Help**.
 
 ## 7. Reset the Game
-Restores all default values and clears the grid.
+Restores default values and clears highlights.
 
 ### User Action
-Click **Reset**.
-
-### Confirmation Prompt
+Click **Reset** → Confirmation prompt appears:
 ```
 Are you sure you want to reset?
 This will restore:
@@ -120,36 +134,36 @@ This will restore:
 and clear current highlights.
 ```
 
-If confirmed, the program:
-- Resets credits
-- Resets bet values
-- Resets paylines
-- Clears highlights
-- Randomizes the grid
+Resetting:
+- Resets credits  
+- Resets bet and lines  
+- Clears grid highlighting  
+- Re‑randomizes reel stop positions  
+- Renders a fresh 5×3 window from the strips  
 
 ## 8. Quit the Slot Machine
-Closes the application.
+Closes the program (disabled while reels are still spinning).
 
 ### User Action
 Click **Quit**.
 
-### Confirmation Prompt
+Confirmation:
 ```
 Are you sure you want to quit the slot machine?
 ```
 
-(Spin animation must not be in progress.)
+## Reel Strips (Updated System)
 
-## Symbol Weights
-| Symbol | Weight |
-|--------|--------|
-| 🍒 | 35 |
-| 🍋 | 30 |
-| 🔔 | 18 |
-| ⭐ | 12 |
-| 7 | 5 |
+The slot machine now uses **fixed, 100‑position reel strips** per reel.
 
-Higher weight → more common.
+Each reel contains:
+| Symbol | Count |
+|--------|-------|
+| 🍒 | 45 |
+| 🍋 | 29 |
+| 🔔 | 13 |
+| ⭐ | 10 |
+| 7  | 3  |
 
 ## Paylines (1–9)
 ```
@@ -172,11 +186,19 @@ sequenceDiagram
 
     User->>SlotMachine: Click SPIN
     SlotMachine->>SlotMachine: Deduct credits (Total Bet)
-    SlotMachine->>SlotMachine: Animate reels (staggered stopping)
+    SlotMachine->>SlotMachine: Advance reel strips (animated)
+    SlotMachine->>SlotMachine: Stagger reel stops
     SlotMachine->>SlotMachine: Evaluate paylines
     SlotMachine-->>User: Display win or loss message
     SlotMachine-->>User: Highlight winning lines (if any)
 ```
 
 ## Summary
-This Tkinter slot machine provides a full casino‑style experience with weighted symbols, animated reels, adjustable bets, paylines, and payout evaluation. The UI includes help menus, a full paytable, reset controls, and a polished workflow designed for ease of play and clarity.
+This slot machine now uses **true reel strips** for realistic spinning, controlled probabilities, and accurate RTP modeling. It includes:
+
+- 5×3 reels with animated strip‑based spins  
+- Adjustable bets and paylines  
+- Full paytable and help menu  
+- Winning line highlighting  
+- Reset and quit with confirmation  
+- A polished, user‑friendly gameplay loop  
