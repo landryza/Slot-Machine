@@ -1,5 +1,5 @@
 
-# Slot‑Machine (Tkinter) — Updated for Reel Strips
+# Slot‑Machine
 
 This program provides a fully interactive **5×3 slot machine** built with Tkinter. It features:
 
