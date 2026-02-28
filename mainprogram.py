@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import ttk, messagebox
 import random
@@ -15,9 +14,25 @@ class SlotMachineApp(tk.Tk):
         self.reels = 5
         self.rows = 3
 
-        # Symbols + weights (higher weight = more common)
         self.symbols = ["🍒", "🍋", "🔔", "⭐", "7"]
-        self.weights = [35, 30, 18, 12, 5]
+
+        self.reel_strips = [
+            # Reel 1 (len=100)
+            ['🔔', '🍋', '🍋', '🍋', '🍋', '🍋', '🍋', '⭐', '🍋', '🍋', '⭐', '🍒', '🍋', '🍒', '🍒', '🍒', '🍒', '🍒', '🍋', '🍒', '🍋', '🍒', '🍒', '🍋', '🔔', '🍒', '🍋', '⭐', '🍒', '🔔', '🍒', '🔔', '🍒', '🍒', '🔔', '🍒', '🍒', '🍋', '⭐', '🍋', '🍋', '🍒', '🍒', '7', '⭐', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '🔔', '🍒', '🍒', '🍒', '🍋', '🍋', '⭐', '🍒', '🍒', '🍒', '🔔', '🍒', '🍒', '🍒', '🍋', '🍒', '7', '🍒', '🍒', '⭐', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '🔔', '🍋', '🔔', '🍒', '🍋', '🍒', '🍒', '🍒', '⭐', '🍒', '⭐', '🔔', '🔔', '🍋', '⭐', '🍒', '🍒', '🔔', '🍋', '7', '🍋', '🍋', '🍋'],
+
+            # Reel 2 (len=100)
+            ['🍒', '🍒', '⭐', '🍒', '⭐', '🍒', '🍋', '🍒', '🍒', '🍒', '⭐', '⭐', '🔔', '🍒', '🍋', '🍋', '7', '🔔', '🍋', '🍒', '🔔', '🍋', '🍒', '🍋', '🍋', '🍋', '🍒', '🍋', '🍒', '🍋', '🔔', '🍋', '🍒', '🍒', '🍋', '🍋', '🍒', '🍒', '🍋', '🍒', '🍋', '🍋', '🍒', '🍋', '🍒', '🍒', '⭐', '⭐', '🍒', '7', '🍒', '🍒', '⭐', '🔔', '🍋', '🍋', '7', '🍒', '🍒', '🍋', '🔔', '🍋', '⭐', '🔔', '🍋', '🍋', '🔔', '🍒', '🍒', '🍒', '🍋', '🍒', '⭐', '🍒', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '🔔', '🍋', '🍋', '🍒', '🔔', '🍒', '🍒', '🍒', '🍒', '🍒', '🍒', '🔔', '🍒', '⭐', '🍒', '🍋', '🔔', '🍒', '🍒', '🍒'],
+
+            # Reel 3 (len=100)
+            ['🔔', '🍋', '🍋', '🍋', '🍋', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '🍒', '⭐', '🍒', '🔔', '🍒', '🍋', '⭐', '🍒', '⭐', '🍋', '🍋', '🍒', '🍒', '🍒', '7', '🍒', '🍋', '🔔', '🔔', '⭐', '🍒', '🍒', '7', '🍋', '🔔', '🍒', '7', '🍒', '🍒', '🍋', '🔔', '⭐', '🍒', '🍋', '🍒', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '🍋', '🍋', '🍒', '🔔', '⭐', '🍋', '🍒', '🍒', '🔔', '🍋', '🍒', '🍒', '🍒', '🍒', '⭐', '🍋', '🍒', '🍋', '🍋', '🍒', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '⭐', '⭐', '🍒', '🍋', '🔔', '⭐', '🍒', '🍋', '🍋', '🔔', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋'],
+
+            # Reel 4 (len=100)
+            ['🍋', '🍒', '🔔', '🍋', '🍒', '🍋', '🍋', '🍒', '🍒', '🍒', '🍋', '7', '🔔', '🍒', '🍒', '🍋', '🍋', '🍋', '🍒', '🍋', '🍒', '🍒', '⭐', '🍒', '🍋', '🍒', '⭐', '🍒', '🍒', '🍒', '🍋', '🍒', '🍋', '🍒', '7', '🍋', '🔔', '🍋', '🍋', '🍒', '🍋', '🍒', '🍒', '🔔', '🔔', '🔔', '🍒', '🔔', '🔔', '🍒', '⭐', '🍋', '🍒', '🍋', '🍒', '7', '🍋', '🍋', '🍋', '🍒', '🍒', '🍒', '⭐', '🍒', '⭐', '🍒', '🍒', '🍒', '🔔', '🍒', '🔔', '⭐', '🔔', '🍒', '🍒', '🍒', '🍋', '🍒', '🍋', '🔔', '⭐', '🔔', '🍒', '🍋', '🍒', '🍒', '🍒', '🍋', '⭐', '⭐', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '⭐', '🍋', '🍋', '🍋'],
+
+            # Reel 5 (len=100)
+            ['🔔', '🍋', '⭐', '🍋', '🍒', '🍒', '🍒', '🍋', '🔔', '🍒', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '🍒', '🍒', '🍒', '🔔', '🍋', '🍒', '🍒', '🍋', '🍒', '🔔', '🔔', '🍒', '⭐', '🍋', '🍒', '7', '🔔', '🍒', '🍋', '🍒', '🍒', '🍋', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '🍋', '🍋', '🍒', '🍒', '🍒', '⭐', '🍒', '🍋', '⭐', '🍋', '🍋', '🍒', '🍋', '🍒', '7', '⭐', '🍒', '🍒', '⭐', '🔔', '🍒', '🔔', '⭐', '⭐', '🔔', '🍋', '🍒', '🍒', '🍋', '🍋', '🍒', '🍋', '🍒', '🔔', '🍒', '🍒', '🍋', '🍋', '🍒', '🍋', '🍋', '🔔', '🍋', '🍋', '🍋', '🔔', '🍋', '7', '⭐', '🍒', '🍒', '🍒', '⭐', '🍒', '🍒', '🍒'],
+        ]
+
 
         # Payout multipliers PER LINE for 3/4/5-of-a-kind (left-to-right)
         # winnings = bet_per_line * multiplier
@@ -26,7 +41,7 @@ class SlotMachineApp(tk.Tk):
             "🍋": {3: 4, 4: 10, 5: 25},
             "🔔": {3: 6, 4: 15, 5: 40},
             "⭐": {3: 10, 4: 25, 5: 80},
-            "7":  {3: 25, 4: 80, 5: 250},
+            "7": {3: 25, 4: 80, 5: 250},
         }
 
         # Define paylines as a list of row indices for each reel (length = 5)
@@ -53,12 +68,15 @@ class SlotMachineApp(tk.Tk):
         self.spinning = False
         self.paytable_win = None
 
+        # Reel stop indices (top visible row index per reel)
+        self.current_stops = [0] * self.reels
+
         # Grid values (StringVars) and label widgets for highlight
         self.grid_vars = [[tk.StringVar(value="") for _ in range(self.reels)] for _ in range(self.rows)]
         self.cell_labels = [[None for _ in range(self.reels)] for _ in range(self.rows)]
 
         self._build_ui()
-        self._randomize_full_grid()
+        self._randomize_full_grid_from_strips()
 
         # ✅ Show welcome message AFTER window initializes
         self.after(150, self.show_welcome)
@@ -69,12 +87,13 @@ class SlotMachineApp(tk.Tk):
             "Welcome to Zach's Slot Machine!\n\n"
             "What this program does:\n"
             "• Simulates a 5‑reel, 3‑row slot machine with multiple paylines.\n"
+            "• Now uses REEL STRIPS for realistic spinning and slot math control.\n"
             "• Lets you choose how many paylines to play and your bet per line.\n"
             "• Calculates wins based on 3/4/5‑of‑a‑kind from left to right.\n\n"
             "How it benefits you:\n"
-            "• Fun way to practice decision‑making with risk/reward.\n"
-            "• Helps you visualize probability/odds and bankroll management.\n"
-            "• Quick entertainment with adjustable bets and lines.\n\n"
+            "• Practice decision‑making with risk/reward.\n"
+            "• Visualize probability/odds and bankroll management.\n"
+            "• Realistic reel behavior suitable for bonus triggers and audits.\n\n"
             "How to play:\n"
             "1) Set Lines and Bet/Line\n"
             "2) Press SPIN\n"
@@ -82,8 +101,7 @@ class SlotMachineApp(tk.Tk):
             "Good luck!"
         )
         messagebox.showinfo("Welcome!", text)
-    
-        
+
     def show_help(self):
         help_text = (
             "HELP — Controls & What They Do\n\n"
@@ -102,7 +120,7 @@ class SlotMachineApp(tk.Tk):
             "SPIN:\n"
             "• Starts a spin if you have enough credits.\n"
             "• Deducts the Total Bet upfront.\n"
-            "• When the reels stop, it checks each active payline for wins.\n\n"
+            "• Reels spin by advancing their strip indices and then stop.\n\n"
             "Paytable:\n"
             "• Opens the full paytable window.\n"
             "• Shows the payout multipliers for 3/4/5-of-a-kind per line.\n"
@@ -115,10 +133,8 @@ class SlotMachineApp(tk.Tk):
             "How wins work (quick overview):\n"
             "• Only left-to-right matches starting from reel 1 count.\n"
             "• 3+ matching symbols in a row on a payline pay out.\n"
-            "• Winnings = Bet/Line × Multiplier (per winning line).\n"
         )
         messagebox.showinfo("Help", help_text)
-
 
     # -------------------------
     # UI
@@ -130,7 +146,6 @@ class SlotMachineApp(tk.Tk):
         # Layout: left game area + right mini paytable
         left = ttk.Frame(root)
         left.grid(row=0, column=0, padx=(0, 12), sticky="n")
-
         right = ttk.Frame(root)
         right.grid(row=0, column=1, sticky="n")
 
@@ -143,7 +158,6 @@ class SlotMachineApp(tk.Tk):
 
         ttk.Label(top, text="Bet/Line:").grid(row=0, column=2, padx=(18, 6))
         ttk.Label(top, textvariable=self.bet_per_line, width=6).grid(row=0, column=3, sticky="w")
-
         ttk.Button(top, text="Bet -", command=self.bet_down).grid(row=0, column=4, padx=(18, 4))
         ttk.Button(top, text="Bet +", command=self.bet_up).grid(row=0, column=5, padx=(0, 10))
 
@@ -189,19 +203,14 @@ class SlotMachineApp(tk.Tk):
         ttk.Label(left, textvariable=self.message, font=("Segoe UI", 12)).grid(row=2, column=0, pady=(0, 10))
 
         # Controls
-        
         controls = ttk.Frame(left)
         controls.grid(row=3, column=0)
-
         self.spin_btn = ttk.Button(controls, text="SPIN", command=self.start_spin)
         self.spin_btn.grid(row=0, column=0, padx=6)
-
         ttk.Button(controls, text="Paytable", command=self.show_paytable).grid(row=0, column=1, padx=6)
         ttk.Button(controls, text="Help", command=self.show_help).grid(row=0, column=2, padx=6)
         ttk.Button(controls, text="Reset", command=self.confirm_reset).grid(row=0, column=3, padx=6)
         ttk.Button(controls, text="Quit", command=self.confirm_quit).grid(row=0, column=4, padx=6)
-
-
 
         # -------------------------
         # Hybrid mini paytable (always visible)
@@ -217,13 +226,11 @@ class SlotMachineApp(tk.Tk):
         )[:3]
 
         ttk.Label(mini, text="Top Wins:", font=("Segoe UI", 11, "bold")).grid(row=0, column=0, sticky="w", pady=(0, 8))
-
         for i, (sym, mult) in enumerate(top_wins, start=1):
             ttk.Label(mini, text=f"{sym*5}", font=("Segoe UI Emoji", 14)).grid(row=i, column=0, sticky="w")
             ttk.Label(mini, text=f"Bet × {mult}").grid(row=i, column=1, sticky="w", padx=(12, 0))
 
         ttk.Separator(mini).grid(row=5, column=0, columnspan=2, sticky="ew", pady=10)
-
         ttk.Label(mini, text="Tip: Use Paytable button\nfor full 3/4/5 payouts.").grid(row=6, column=0, columnspan=2, sticky="w")
 
     # -------------------------
@@ -237,13 +244,26 @@ class SlotMachineApp(tk.Tk):
         lines = max(1, min(self.active_lines.get(), len(self.all_paylines)))
         return self.bet_per_line.get() * lines
 
-    def _pick_symbol(self):
-        return random.choices(self.symbols, weights=self.weights, k=1)[0]
+    # ----- Reel-strip rendering helpers -----
+    def _render_from_strips(self, stops):
+        """
+        Render the visible 3x5 window from reel strips using provided stop indices.
+        For each reel c: rows 0..2 are strip[(stop + r) % len(strip)].
+        """
+        for c in range(self.reels):
+            strip = self.reel_strips[c]
+            L = len(strip)
+            stop = stops[c] % L
+            for r in range(self.rows):
+                sym = strip[(stop + r) % L]
+                self.grid_vars[r][c].set(sym)
 
-    def _randomize_full_grid(self):
-        for r in range(self.rows):
-            for c in range(self.reels):
-                self.grid_vars[r][c].set(self._pick_symbol())
+    def _randomize_full_grid_from_strips(self):
+        """Pick random stops per reel and render."""
+        self.current_stops = [
+            random.randrange(len(self.reel_strips[c])) for c in range(self.reels)
+        ]
+        self._render_from_strips(self.current_stops)
 
     def _reset_highlights(self):
         for r in range(self.rows):
@@ -279,7 +299,6 @@ class SlotMachineApp(tk.Tk):
     def start_spin(self):
         if self.spinning:
             return
-
         self._reset_highlights()
         self._update_total_bet_label()
 
@@ -288,22 +307,52 @@ class SlotMachineApp(tk.Tk):
             self.message.set("Not enough credits for that bet!")
             return
 
+        # Deduct cost and start spinning
         self.credits.set(self.credits.get() - cost)
         self.message.set("Spinning...")
         self.spinning = True
         self.spin_btn.state(["disabled"])
 
-        self._animate_spin(tick=0, stop_ticks=[10, 12, 14, 16, 18])
+        # Create staggered stop ticks for each reel (longer reels can spin longer)
+        base_ticks = 22
+        gap = 3
+        stop_ticks = [base_ticks + i * gap for i in range(self.reels)]
 
-    def _animate_spin(self, tick, stop_ticks):
+        # Optional: give each reel an initial angular velocity in "steps per tick"
+        self._spin_speeds = [3, 4, 5, 4, 3]  # steps per tick per reel (tune feel)
+        self._tick = 0
+
+        # Choose random final stops now, and we'll decelerate into them
+        self._final_stops = [
+            random.randrange(len(self.reel_strips[c])) for c in range(self.reels)
+        ]
+
+        self._animate_spin(stop_ticks)
+
+    def _animate_spin(self, stop_ticks):
+        """
+        Advance each reel's stop index while tick < stop_ticks[c].
+        On the last tick for a reel, snap its index to the final stop to ensure determinism.
+        """
+        any_spinning = False
         for c in range(self.reels):
-            if tick < stop_ticks[c]:
-                for r in range(self.rows):
-                    self.grid_vars[r][c].set(self._pick_symbol())
+            if self._tick < stop_ticks[c]:
+                # advance the reel by its speed
+                speed = self._spin_speeds[c]
+                self.current_stops[c] = (self.current_stops[c] + speed) % len(self.reel_strips[c])
+                any_spinning = True
+            elif self._tick == stop_ticks[c]:
+                # final snap to preselected stop for clean stop
+                self.current_stops[c] = self._final_stops[c] % len(self.reel_strips[c])
 
-        if tick < max(stop_ticks):
-            self.after(60, lambda: self._animate_spin(tick + 1, stop_ticks))
+        # Render current window
+        self._render_from_strips(self.current_stops)
+
+        if any_spinning:
+            self._tick += 1
+            self.after(45, lambda: self._animate_spin(stop_ticks))
         else:
+            # Done
             self.finish_spin()
 
     def finish_spin(self):
@@ -311,31 +360,26 @@ class SlotMachineApp(tk.Tk):
 
         if total_win > 0:
             self.credits.set(self.credits.get() + total_win)
-
             colors = ["light goldenrod", "light cyan", "light pink", "pale green"]
             for i, w in enumerate(wins):
                 self._highlight_line(w["payline"], color=colors[i % len(colors)])
-
-            self.message.set(f"WIN! +{total_win}  ({len(wins)} line(s))")
+            self.message.set(f"WIN! +{total_win} ({len(wins)} line(s))")
         else:
             self.message.set("No win — try again!")
 
         self.spinning = False
         self.spin_btn.state(["!disabled"])
-
         if self.credits.get() <= 0:
             self.message.set("Out of credits! Press Reset.")
 
     def evaluate_wins(self):
         bet = self.bet_per_line.get()
         paylines = self.get_active_paylines()
-
         wins = []
         total_win = 0
 
         for idx, payline in enumerate(paylines, start=1):
             line_symbols = [self.grid_vars[payline[c]][c].get() for c in range(self.reels)]
-
             first = line_symbols[0]
             run = 1
             for c in range(1, self.reels):
@@ -378,7 +422,6 @@ class SlotMachineApp(tk.Tk):
         wrapper.grid(row=0, column=0, sticky="nsew")
 
         ttk.Label(wrapper, text="FULL PAYTABLE (per line)", font=("Segoe UI", 14, "bold")).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 10))
-
         ttk.Label(wrapper, text="Symbol").grid(row=1, column=0, sticky="w", padx=(0, 18))
         ttk.Label(wrapper, text="3 in a row").grid(row=1, column=1, sticky="w", padx=(0, 18))
         ttk.Label(wrapper, text="4 in a row").grid(row=1, column=2, sticky="w", padx=(0, 18))
@@ -393,9 +436,7 @@ class SlotMachineApp(tk.Tk):
             ttk.Label(wrapper, text=f"Bet × {self.paytable[sym][5]}").grid(row=r, column=3, sticky="w")
 
         ttk.Separator(wrapper).grid(row=r+1, column=0, columnspan=4, sticky="ew", pady=10)
-
         ttk.Label(wrapper, text="Active Paylines:", font=("Segoe UI", 11, "bold")).grid(row=r+2, column=0, columnspan=4, sticky="w", pady=(0, 6))
-
         for i, pl in enumerate(self.all_paylines, start=1):
             ttk.Label(wrapper, text=f"Line {i}: {pl}").grid(row=r+2+i, column=0, columnspan=4, sticky="w")
 
@@ -409,16 +450,14 @@ class SlotMachineApp(tk.Tk):
         self.active_lines.set(5)
         self._update_total_bet_label()
         self._reset_highlights()
-        self._randomize_full_grid()
+        self._randomize_full_grid_from_strips()
         self.message.set("Press SPIN to play!")
 
-    
     def confirm_reset(self):
         """Ask the user to confirm resetting the game."""
         if self.spinning:
             messagebox.showinfo("Please wait", "You can't reset while the reels are spinning.")
             return
-
         if messagebox.askyesno(
             "Confirm Reset",
             "Are you sure you want to reset?\n\n"
@@ -428,22 +467,15 @@ class SlotMachineApp(tk.Tk):
             "• Lines to 5\n"
             "and clear current highlights."
         ):
-            self.reset()  # call your existing reset logic
-
+            self.reset()
 
     def confirm_quit(self):
         """Ask the user to confirm quitting the application."""
         if self.spinning:
-            # Optional: allow quit anyway, or block. Here we block for safety.
             messagebox.showinfo("Please wait", "You can't quit while the reels are spinning.")
             return
-
-        if messagebox.askyesno(
-            "Confirm Quit",
-            "Are you sure you want to quit the slot machine?"
-        ):
+        if messagebox.askyesno("Confirm Quit", "Are you sure you want to quit the slot machine?"):
             self.destroy()
-
 
 
 if __name__ == "__main__":
