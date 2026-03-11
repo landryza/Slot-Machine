@@ -1,7 +1,13 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 import random
+import json
+import urllib.request
+import urllib.error
+import urllib.parse
 
+LOGIN_URL = "http://127.0.0.1:8081/auth/login"
+RNG_URL = "http://127.0.0.1:8088/reels/spin"
 class SlotMachineApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -15,22 +21,52 @@ class SlotMachineApp(tk.Tk):
         self.rows = 3
 
         self.symbols = ["🍒", "🍋", "🔔", "⭐", "7"]
+        self.scatter_symbol = "🎁"
+        self.scatter_threshold = 3
+        self.scatter_highlight = "#C7F0BD"
 
         self.reel_strips = [
             # Reel 1 (len=100)
-            ['🔔', '🍋', '🍋', '🍋', '🍋', '🍋', '🍋', '⭐', '🍋', '🍋', '⭐', '🍒', '🍋', '🍒', '🍒', '🍒', '🍒', '🍒', '🍋', '🍒', '🍋', '🍒', '🍒', '🍋', '🔔', '🍒', '🍋', '⭐', '🍒', '🔔', '🍒', '🔔', '🍒', '🍒', '🔔', '🍒', '🍒', '🍋', '⭐', '🍋', '🍋', '🍒', '🍒', '7', '⭐', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '🔔', '🍒', '🍒', '🍒', '🍋', '🍋', '⭐', '🍒', '🍒', '🍒', '🔔', '🍒', '🍒', '🍒', '🍋', '🍒', '7', '🍒', '🍒', '⭐', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '🔔', '🍋', '🔔', '🍒', '🍋', '🍒', '🍒', '🍒', '⭐', '🍒', '⭐', '🔔', '🔔', '🍋', '⭐', '🍒', '🍒', '🔔', '🍋', '7', '🍋', '🍋', '🍋'],
-
+            [
+            '🔔','🍋','🍋','🍋','🍋','🍋','🍋','⭐','🍋','🍋','🎁','🍒','🍋','🍒','🍒','🍒','🍒','🍒','🍋','🍒',
+            '🍋','🍒','🍒','🍋','🔔','🍒','🍋','⭐','🍒','🔔','🎁','🔔','🍒','🍒','🔔','🍒','🍒','🍋','⭐','🍋',
+            '🍋','🍒','🍒','7','⭐','🍋','🍒','🍒','🎁','🍒','🍋','🔔','🍒','🍒','🍒','🍋','🍋','⭐','🍒','🍒',
+            '🍒','🔔','🍒','🍒','🍒','🍋','🍒','7','🎁','🍒','⭐','🍒','🍒','🍒','🍋','🍒','🍒','🔔','🍋','🔔',
+            '🍒','🍋','🍒','🍒','🍒','⭐','🍒','⭐','🔔','🔔','🍋','⭐','🍒','🍒','🔔','🍋','7','🍋','🍋','🎁'
+            ]
             # Reel 2 (len=100)
-            ['🍒', '🍒', '⭐', '🍒', '⭐', '🍒', '🍋', '🍒', '🍒', '🍒', '⭐', '⭐', '🔔', '🍒', '🍋', '🍋', '7', '🔔', '🍋', '🍒', '🔔', '🍋', '🍒', '🍋', '🍋', '🍋', '🍒', '🍋', '🍒', '🍋', '🔔', '🍋', '🍒', '🍒', '🍋', '🍋', '🍒', '🍒', '🍋', '🍒', '🍋', '🍋', '🍒', '🍋', '🍒', '🍒', '⭐', '⭐', '🍒', '7', '🍒', '🍒', '⭐', '🔔', '🍋', '🍋', '7', '🍒', '🍒', '🍋', '🔔', '🍋', '⭐', '🔔', '🍋', '🍋', '🔔', '🍒', '🍒', '🍒', '🍋', '🍒', '⭐', '🍒', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '🔔', '🍋', '🍋', '🍒', '🔔', '🍒', '🍒', '🍒', '🍒', '🍒', '🍒', '🔔', '🍒', '⭐', '🍒', '🍋', '🔔', '🍒', '🍒', '🍒'],
+            [
+            '🍒','🍒','⭐','🍒','⭐','🍒','🍋','🍒','🍒','🍒','🎁','⭐','⭐','🔔','🍒','🍋','🍋','7','🔔','🍋',
+            '🍒','🔔','🍋','🍒','🍋','🍋','🍋','🍒','🍋','🎁','🍋','🔔','🍋','🍒','🍒','🍋','🍋','🍒','🍒','🍋',
+            '🍒','🍋','🍋','🍒','🍋','🍒','🍒','⭐','🎁','7','🍒','🍒','⭐','🔔','🍋','🍋','7','🍒','🍒','🍋',
+            '🔔','🍋','⭐','🔔','🍋','🍋','🔔','🍒','🍒','🍒','🍋','🍒','🎁','🍒','🍋','🍒','🍒','🔔','🍒','🍋',
+            '🔔','🍋','🍋','🍒','🔔','🍒','🍒','🍒','🍒','🍒','🍒','🔔','🍒','⭐','🍒','🍋','🔔','🍒','🍒','🎁'
+            ]
 
             # Reel 3 (len=100)
-            ['🔔', '🍋', '🍋', '🍋', '🍋', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '🍒', '⭐', '🍒', '🔔', '🍒', '🍋', '⭐', '🍒', '⭐', '🍋', '🍋', '🍒', '🍒', '🍒', '7', '🍒', '🍋', '🔔', '🔔', '⭐', '🍒', '🍒', '7', '🍋', '🔔', '🍒', '7', '🍒', '🍒', '🍋', '🔔', '⭐', '🍒', '🍋', '🍒', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '🍋', '🍋', '🍒', '🔔', '⭐', '🍋', '🍒', '🍒', '🔔', '🍋', '🍒', '🍒', '🍒', '🍒', '⭐', '🍋', '🍒', '🍋', '🍋', '🍒', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '⭐', '⭐', '🍒', '🍋', '🔔', '⭐', '🍒', '🍋', '🍋', '🔔', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋'],
-
+            [
+            '🔔','🍋','🍋','🍋','🍋','🍋','🍒','🍒','🔔','🍒','🎁','🍒','⭐','🍒','🔔','🍒','🍋','⭐','🍒','⭐',
+            '🍋','🍋','🍒','🍒','🍒','7','🍒','🍋','🔔','🎁','⭐','🍒','🍒','7','🍋','🔔','🍒','7','🍒','🍒',
+            '🍋','🔔','⭐','🍒','🍋','🍒','🍒','🍒','🍒','🍋','🎁','🍒','🍒','🍒','🍒','🍒','🍋','🍒','🍒','🍋',
+            '🍋','🍒','🔔','⭐','🍋','🍒','🍒','🔔','🍋','🍒','🍒','🍒','🍒','⭐','🍋','🍒','🍋','🍋','🍒','🍋',
+            '🎁','🍒','🔔','🍒','🍋','⭐','⭐','🍒','🍋','🔔','⭐','🍒','🍋','🍋','🔔','🍋','🍒','🍒','🔔','🎁'
+            ]
             # Reel 4 (len=100)
-            ['🍋', '🍒', '🔔', '🍋', '🍒', '🍋', '🍋', '🍒', '🍒', '🍒', '🍋', '7', '🔔', '🍒', '🍒', '🍋', '🍋', '🍋', '🍒', '🍋', '🍒', '🍒', '⭐', '🍒', '🍋', '🍒', '⭐', '🍒', '🍒', '🍒', '🍋', '🍒', '🍋', '🍒', '7', '🍋', '🔔', '🍋', '🍋', '🍒', '🍋', '🍒', '🍒', '🔔', '🔔', '🔔', '🍒', '🔔', '🔔', '🍒', '⭐', '🍋', '🍒', '🍋', '🍒', '7', '🍋', '🍋', '🍋', '🍒', '🍒', '🍒', '⭐', '🍒', '⭐', '🍒', '🍒', '🍒', '🔔', '🍒', '🔔', '⭐', '🔔', '🍒', '🍒', '🍒', '🍋', '🍒', '🍋', '🔔', '⭐', '🔔', '🍒', '🍋', '🍒', '🍒', '🍒', '🍋', '⭐', '⭐', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '⭐', '🍋', '🍋', '🍋'],
-
+            [
+            '🍋','🍒','🔔','🍋','🍒','🍋','🍋','🍒','🍒','🍒','🎁','7','🔔','🍒','🍒','🍋','🍋','🍋','🍒','🍋',
+            '🍒','🍒','⭐','🍒','🍋','🍒','⭐','🍒','🍒','🎁','🍋','🍒','🍋','🍒','7','🍋','🔔','🍋','🍋','🍒',
+            '🍋','🍒','🍒','🔔','🔔','🔔','🍒','🔔','🔔','🎁','⭐','🍋','🍒','🍋','🍒','7','🍋','🍋','🍋','🍒',
+            '🍒','🍒','⭐','🍒','⭐','🍒','🍒','🍒','🔔','🍒','🔔','⭐','🔔','🍒','🍒','🍒','🍋','🎁','🍋','🔔',
+            '⭐','🔔','🍒','🍋','🍒','🍒','🍒','🍋','⭐','⭐','🍒','🍒','🍒','🍋','🍒','🍒','⭐','🍋','🍋','🎁'
+            ]
             # Reel 5 (len=100)
-            ['🔔', '🍋', '⭐', '🍋', '🍒', '🍒', '🍒', '🍋', '🔔', '🍒', '🍒', '🍒', '🍒', '🍋', '🍒', '🍒', '🍒', '🍒', '🍒', '🔔', '🍋', '🍒', '🍒', '🍋', '🍒', '🔔', '🔔', '🍒', '⭐', '🍋', '🍒', '7', '🔔', '🍒', '🍋', '🍒', '🍒', '🍋', '🍋', '🍒', '🍒', '🔔', '🍒', '🍋', '🍋', '🍋', '🍒', '🍒', '🍒', '⭐', '🍒', '🍋', '⭐', '🍋', '🍋', '🍒', '🍋', '🍒', '7', '⭐', '🍒', '🍒', '⭐', '🔔', '🍒', '🔔', '⭐', '⭐', '🔔', '🍋', '🍒', '🍒', '🍋', '🍋', '🍒', '🍋', '🍒', '🔔', '🍒', '🍒', '🍋', '🍋', '🍒', '🍋', '🍋', '🔔', '🍋', '🍋', '🍋', '🔔', '🍋', '7', '⭐', '🍒', '🍒', '🍒', '⭐', '🍒', '🍒', '🍒'],
+            [
+            '🔔','🍋','⭐','🍋','🍒','🍒','🍒','🍋','🔔','🍒','🎁','🍒','🍒','🍋','🍒','🍒','🍒','🍒','🍒','🔔',
+            '🍋','🍒','🍒','🍋','🍒','🔔','🔔','🍒','⭐','🍋','🎁','7','🔔','🍒','🍋','🍒','🍒','🍋','🍋','🍒',
+            '🍒','🔔','🍒','🍋','🍋','🍋','🍒','🍒','🍒','⭐','🎁','🍒','🍋','⭐','🍋','🍋','🍒','🍋','🍒','7',
+            '⭐','🍒','🍒','⭐','🔔','🍒','🔔','⭐','⭐','🔔','🍋','🍒','🍒','🍋','🍋','🍒','🍋','🍒','🔔','🎁',
+            '🍒','🍒','🍋','🍋','🍒','🍋','🍋','🔔','🍋','🍋','🍋','🔔','🍋','7','⭐','🍒','🍒','🍒','⭐','🎁'
+            ]     
         ]
 
 
@@ -67,6 +103,7 @@ class SlotMachineApp(tk.Tk):
         self.message = tk.StringVar(value="Press SPIN to play!")
         self.spinning = False
         self.paytable_win = None
+        self.biggest_record = tk.StringVar(value="-")
 
         # Reel stop indices (top visible row index per reel)
         self.current_stops = [0] * self.reels
@@ -78,8 +115,14 @@ class SlotMachineApp(tk.Tk):
         self._build_ui()
         self._randomize_full_grid_from_strips()
 
-        # ✅ Show welcome message AFTER window initializes
+        self.auth_token = None
+        self.prompt_login()
+
         self.after(150, self.show_welcome)
+
+        rec = self._leaderboard_biggest("tk5x3:v1")
+        if rec and "amount" in rec:
+            self.biggest_record.set(str(rec["amount"]))
 
     def show_welcome(self):
         """Show a startup pop-up explaining the program and its benefits."""
@@ -133,6 +176,10 @@ class SlotMachineApp(tk.Tk):
             "How wins work (quick overview):\n"
             "• Only left-to-right matches starting from reel 1 count.\n"
             "• 3+ matching symbols in a row on a payline pay out.\n"
+            "Scatter Bonus:\n"
+            "• 🎁 appears anywhere on the reels.\n"
+            "• 3+ triggers a Free Spin bonus.\n\n"
+
         )
         messagebox.showinfo("Help", help_text)
 
@@ -176,6 +223,8 @@ class SlotMachineApp(tk.Tk):
         self.total_bet_label = ttk.Label(top, text="")
         self.total_bet_label.grid(row=0, column=8, padx=(18, 0), sticky="w")
         self._update_total_bet_label()
+        ttk.Label(top, text="Record:").grid(row=0, column=9, padx=(18, 6))
+        ttk.Label(top, textvariable=self.biggest_record, width=8).grid(row=0, column=10, sticky="w")    
 
         # Slot grid frame (use tk.Label for easy background highlighting)
         grid_frame = ttk.Frame(left)
@@ -260,9 +309,7 @@ class SlotMachineApp(tk.Tk):
 
     def _randomize_full_grid_from_strips(self):
         """Pick random stops per reel and render."""
-        self.current_stops = [
-            random.randrange(len(self.reel_strips[c])) for c in range(self.reels)
-        ]
+        self.current_stops = self.get_rng_stops(seed=None)
         self._render_from_strips(self.current_stops)
 
     def _reset_highlights(self):
@@ -274,9 +321,117 @@ class SlotMachineApp(tk.Tk):
         for c, r in enumerate(payline):
             self.cell_labels[r][c].config(bg=color)
 
+    def _highlight_cells(self, coords, color):
+        """Highlight arbitrary (row, col) cells."""
+        for (r, c) in coords:
+            if 0 <= r < self.rows and 0 <= c < self.reels:
+                self.cell_labels[r][c].config(bg=color)
+
     def get_active_paylines(self):
         n = max(1, min(self.active_lines.get(), len(self.all_paylines)))
         return self.all_paylines[:n]
+    
+    def _check_bonus_via_service_urllib(self, prob=1.0, seed=None):
+        url = "http://127.0.0.1:8095/bonus/evaluate"
+        payload = {
+            "grid": self._current_grid(),
+            "config": {
+                "type": "scatter_count",
+                "symbol": getattr(self, "scatter_symbol", "🎁"),
+                "count": getattr(self, "scatter_threshold", 3),
+                "prob": prob
+            }
+        }
+        if seed is not None:
+            payload["seed"] = int(seed)
+
+        try:
+            data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=0.9) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError):
+            return {"bonusTriggered": False, "highlights": []}
+        
+    def _leaderboard_record(self, amount: int, game_id: str = None):
+        url = "http://127.0.0.1:8090/leaderboard/record"
+        body = {"amount": int(amount)}
+        if game_id and game_id.strip():
+            body["gameId"] = game_id
+
+        try:
+            data = json.dumps(body).encode("utf-8")
+            req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=0.9) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError):
+            return None
+
+    def _leaderboard_biggest(self, game_id: str = None):
+        base = "http://127.0.0.1:8090/leaderboard/biggest-win"
+        qs = ""
+        if game_id and game_id.strip():
+            qs = "?gameId=" + urllib.parse.quote(game_id)
+        url = base + qs
+
+        try:
+            with urllib.request.urlopen(url, timeout=0.9) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError):
+            return None
+        
+    def _post_json(self, url, payload, token=None, timeout=1.0):
+        data = json.dumps(payload).encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    def prompt_login(self):
+        try:
+            user = simpledialog.askstring("Login", "Username:")
+            if user is None:
+                self.message.set("Proceeding as guest.")
+                return
+            pw = simpledialog.askstring("Login", "Password:", show="*")
+            if pw is None:
+                self.message.set("Proceeding as guest.")
+                return
+            token = self._login_request(user, pw)
+            if token:
+                self.auth_token = token
+                self.message.set(f"Logged in as {user}.")
+            else:
+                self.message.set("Login failed — proceeding as guest.")
+        except Exception:
+            self.message.set("Login service unavailable — proceeding as guest.")
+
+    def _login_request(self, username, password):
+        try:
+            resp = self._post_json(LOGIN_URL, {"username": username, "password": password}, timeout=1.5)
+            return resp.get("access_token") or resp.get("token")
+        except Exception:
+            return None
+
+    def get_rng_stops(self, seed=None):
+        strip_lengths = [len(s) for s in self.reel_strips]
+        payload = {"strip_lengths": strip_lengths}
+        if seed is not None:
+            payload["seed"] = int(seed)
+        try:
+            resp = self._post_json(RNG_URL, payload, token=self.auth_token, timeout=0.9)
+            stops = resp.get("stops", None)
+            if not stops or len(stops) != len(strip_lengths):
+                raise ValueError("Bad RNG response shape.")
+            # Ensure indices are in range
+            for i, L in enumerate(strip_lengths):
+                stops[i] = int(stops[i]) % L
+            return stops
+        except Exception:
+            # Fallback: local random 
+            return [random.randrange(L) for L in strip_lengths]
 
     # -------------------------
     # Bet controls
@@ -323,9 +478,8 @@ class SlotMachineApp(tk.Tk):
         self._tick = 0
 
         # Choose random final stops now, and we'll decelerate into them
-        self._final_stops = [
-            random.randrange(len(self.reel_strips[c])) for c in range(self.reels)
-        ]
+        self.spin_index = getattr(self, "spin_index", 0) + 1
+        self._final_stops = self.get_rng_stops(seed=self.spin_index)
 
         self._animate_spin(stop_ticks)
 
@@ -363,12 +517,40 @@ class SlotMachineApp(tk.Tk):
             colors = ["light goldenrod", "light cyan", "light pink", "pale green"]
             for i, w in enumerate(wins):
                 self._highlight_line(w["payline"], color=colors[i % len(colors)])
-            self.message.set(f"WIN! +{total_win} ({len(wins)} line(s))")
+            record = self._leaderboard_record(total_win, game_id="tk5x3:v1")
+            if record:
+                rec = self._leaderboard_biggest("tk5x3:v1")
+                if rec and "amount" in rec:
+                    self.biggest_record.set(str(rec["amount"]))
+            if record and record.get("updated"):
+                self.message.set(f"WIN! +{total_win}  — NEW RECORD 🎉")
+            else:
+                self.message.set(f"WIN! +{total_win} ({len(wins)} line(s))")
         else:
             self.message.set("No win — try again!")
 
+        if not hasattr(self, "scatter_symbol"):
+            self.scatter_symbol = "🎁"
+        if not hasattr(self, "scatter_threshold"):
+            self.scatter_threshold = 3
+        scatter_color = getattr(self, "scatter_highlight", "#C7F0BD")
+
+        self.spin_index = getattr(self, "spin_index", 0) + 1
+        bonus = self._check_bonus_via_service_urllib(prob=1.0, seed=self.spin_index)  
+
+        msg = self.message.get()
+        if bonus.get("bonusTriggered"):
+            coords = [(h["r"], h["c"]) for h in bonus.get("highlights", [])]
+            self._highlight_cells(coords, scatter_color)
+            bonus_msg = f"BONUS TRIGGERED ({len(coords)} {self.scatter_symbol})!"
+            if msg:
+                self.message.set(f"{msg}  |  {bonus_msg}")
+            else:
+                self.message.set(bonus_msg)
+
         self.spinning = False
         self.spin_btn.state(["!disabled"])
+
         if self.credits.get() <= 0:
             self.message.set("Out of credits! Press Reset.")
 
@@ -381,6 +563,9 @@ class SlotMachineApp(tk.Tk):
         for idx, payline in enumerate(paylines, start=1):
             line_symbols = [self.grid_vars[payline[c]][c].get() for c in range(self.reels)]
             first = line_symbols[0]
+
+            if first == '🎁':
+                continue
             run = 1
             for c in range(1, self.reels):
                 if line_symbols[c] == first:
