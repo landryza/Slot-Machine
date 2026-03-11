@@ -6,7 +6,11 @@ import urllib.request
 import urllib.error
 import urllib.parse
 
-LOGIN_URL = "http://127.0.0.1:8081/auth/login"
+
+AUTH_BASE = "http://127.0.0.1:5002"    
+LOGIN_URL = f"{AUTH_BASE}/login"
+CREATE_USER_URL = f"{AUTH_BASE}/users"
+ME_URL = f"{AUTH_BASE}/me"
 RNG_URL = "http://127.0.0.1:8088/reels/spin"
 class SlotMachineApp(tk.Tk):
     def __init__(self):
@@ -103,6 +107,16 @@ class SlotMachineApp(tk.Tk):
         self.spinning = False
         self.paytable_win = None
         self.biggest_record = tk.StringVar(value="-")
+        # --- Free Spins state ---
+        self.free_spins_remaining = tk.IntVar(value=0)   
+        self.in_free_spins = False                     
+        self.free_spins_award_map = {                   
+            3: 10,   
+            4: 15,   
+            5: 20,   
+        }
+        self.free_spins_retrigger = True               
+        self.free_spin_win_multiplier = 1   
 
         # Reel stop indices (top visible row index per reel)
         self.current_stops = [0] * self.reels
@@ -223,7 +237,11 @@ class SlotMachineApp(tk.Tk):
         self.total_bet_label.grid(row=0, column=8, padx=(18, 0), sticky="w")
         self._update_total_bet_label()
         ttk.Label(top, text="Record:").grid(row=0, column=9, padx=(18, 6))
-        ttk.Label(top, textvariable=self.biggest_record, width=8).grid(row=0, column=10, sticky="w")    
+        ttk.Label(top, textvariable=self.biggest_record, width=8).grid(row=0, column=10, sticky="w")
+
+        ttk.Label(top, text="Free Spins:").grid(row=0, column=11, padx=(18, 6))
+        self.free_spins_label = ttk.Label(top, textvariable=self.free_spins_remaining, width=4)
+        self.free_spins_label.grid(row=0, column=12, sticky="w")    
 
         # Slot grid frame (use tk.Label for easy background highlighting)
         grid_frame = ttk.Frame(left)
@@ -289,6 +307,8 @@ class SlotMachineApp(tk.Tk):
         self.total_bet_label.config(text=f"Total Bet: {total}")
 
     def total_bet(self):
+        if self.in_free_spins and self.free_spins_remaining.get() > 0:
+            return 0
         lines = max(1, min(self.active_lines.get(), len(self.all_paylines)))
         return self.bet_per_line.get() * lines
 
@@ -310,6 +330,12 @@ class SlotMachineApp(tk.Tk):
         """Pick random stops per reel and render."""
         self.current_stops = self.get_rng_stops(seed=None)
         self._render_from_strips(self.current_stops)
+
+    def _current_grid(self):
+        return [
+            [self.grid_vars[r][c].get() for c in range(self.reels)]
+            for r in range(self.rows)
+        ]
 
     def _reset_highlights(self):
         for r in range(self.rows):
@@ -388,29 +414,132 @@ class SlotMachineApp(tk.Tk):
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
 
-    def prompt_login(self):
+    def prompt_login(self): 
         try:
-            user = simpledialog.askstring("Login", "Username:")
-            if user is None:
-                self.message.set("Proceeding as guest.")
-                return
-            pw = simpledialog.askstring("Login", "Password:", show="*")
-            if pw is None:
-                self.message.set("Proceeding as guest.")
-                return
-            token = self._login_request(user, pw)
-            if token:
-                self.auth_token = token
-                self.message.set(f"Logged in as {user}.")
+            answer = messagebox.askyesnocancel(
+                "Welcome",
+                "Do you already have an account?\n\n"
+                "Yes = Log in\n"
+                "No = Create a new account\n"
+                "Cancel = Continue as guest"
+            )
+            if answer is True:
+                # Log in flow
+                self.do_login_flow()
+            elif answer is False:
+                # Create account flow
+                created = self.do_signup_flow()
+                if created:
+                    # Auto-login after successful sign-up
+                    token = self._login_request(created["user_id"], created.get("password_for_login", ""))
+                    if token:
+                        self.auth_token = token
+                        name = created.get("display_name", created["user_id"])
+                        self.message.set(f"Account created. Logged in as {name}.")
+                    else:
+                        self.message.set("Account created, but login failed — proceeding as guest.")
+                else:
+                    self.message.set("Sign up canceled — proceeding as guest.")
             else:
-                self.message.set("Login failed — proceeding as guest.")
+                # Cancel → guest
+                self.message.set("Proceeding as guest.")
         except Exception:
             self.message.set("Login service unavailable — proceeding as guest.")
 
+    def do_login_flow(self):
+        user = simpledialog.askstring("Log in", "Username:")
+        if user is None or not user.strip():
+            self.message.set("Proceeding as guest.")
+            return
+
+        pw = simpledialog.askstring("Log in", "Password:", show="*")
+        if pw is None:
+            self.message.set("Proceeding as guest.")
+            return
+
+        token = self._login_request(user.strip(), pw)
+        if token:
+            self.auth_token = token
+            self.message.set(f"Logged in as {user}.")
+            return
+
+        # Login failed → retry or sign up or guest
+        choice = messagebox.askyesnocancel(
+            "Login failed",
+            "Could not log in with those credentials.\n\n"
+            "Yes = Try again\n"
+            "No = Create a new account\n"
+            "Cancel = Continue as guest"
+        )
+        if choice is True:
+            # Try login again
+            self.do_login_flow()
+        elif choice is False:
+            created = self.do_signup_flow(prefill_user=user.strip())
+            if created:
+                token = self._login_request(created["user_id"], created.get("password_for_login", ""))
+                if token:
+                    self.auth_token = token
+                    name = created.get("display_name", created["user_id"])
+                    self.message.set(f"Account created. Logged in as {name}.")
+                else:
+                    self.message.set("Account created, but login failed — proceeding as guest.")
+            else:
+                self.message.set("Sign up canceled — proceeding as guest.")
+        else:
+            self.message.set("Proceeding as guest.")
+
+
+    def do_signup_flow(self, prefill_user: str = None):
+
+        user_id = simpledialog.askstring("Sign up", "Choose a username:", initialvalue=(prefill_user or ""))
+        if user_id is None or not user_id.strip():
+            return None
+
+        display_name = simpledialog.askstring("Sign up", "Display name:")
+        if display_name is None or not display_name.strip():
+            return None
+
+        pw = simpledialog.askstring("Sign up", "Password:", show="*")
+        if pw is None or not pw:
+            return None
+
+        pw2 = simpledialog.askstring("Sign up", "Confirm password:", show="*")
+        if pw2 is None:
+            return None
+        if pw != pw2:
+            messagebox.showerror("Mismatch", "Passwords do not match.")
+            return None
+
+        created = self._signup_request(user_id.strip(), display_name.strip(), pw)
+        if not created:
+            messagebox.showerror("Sign up failed", "Could not create the account (maybe user exists).")
+            return None
+
+        # Return minimal info + the password so caller can auto-login once
+        created["password_for_login"] = pw
+        return created
+
     def _login_request(self, username, password):
         try:
-            resp = self._post_json(LOGIN_URL, {"username": username, "password": password}, timeout=1.5)
-            return resp.get("access_token") or resp.get("token")
+            resp = self._post_json(LOGIN_URL, {"user_id": username, "password": password}, timeout=1.5)
+            # FastAPI service: { "ok": true, "token": "<...>", "user_id": "<...>" }
+            return resp.get("token") or resp.get("access_token")
+        except Exception:
+            return None
+   
+    def _signup_request(self, user_id: str, display_name: str, password: str):
+        try:
+            payload = {
+                "user_id": user_id,
+                "password": password,
+                "display_name": display_name
+            }
+            resp = self._post_json(CREATE_USER_URL, payload, timeout=2.0)
+            # Expected shape: { "ok": true, "user": { "user_id": "...", "display_name": "..." } }
+            if resp and resp.get("ok") and "user" in resp:
+                return resp["user"]
+            return None
         except Exception:
             return None
 
@@ -457,13 +586,20 @@ class SlotMachineApp(tk.Tk):
         self._update_total_bet_label()
 
         cost = self.total_bet()
-        if self.credits.get() < cost:
-            self.message.set("Not enough credits for that bet!")
-            return
+        self._current_spin_is_free = (cost == 0)
+        
+        if cost > 0:
+            if self.credits.get() < cost:
+                self.message.set("Not enough credits for that bet!")
+                return
+            self.credits.set(self.credits.get() - cost)
+            self.message.set("Spinning...")
+        else:
+            if self.free_spins_remaining.get() <= 0:
+                self.message.set("No free spins available.")
+                return
+            self.message.set(f"FREE SPIN ({self.free_spins_remaining.get()} left)...")
 
-        # Deduct cost and start spinning
-        self.credits.set(self.credits.get() - cost)
-        self.message.set("Spinning...")
         self.spinning = True
         self.spin_btn.state(["disabled"])
 
@@ -511,6 +647,9 @@ class SlotMachineApp(tk.Tk):
     def finish_spin(self):
         wins, total_win = self.evaluate_wins()
 
+        if self.in_free_spins and self.free_spins_remaining.get() > 0 and self.free_spin_win_multiplier != 1:
+            total_win *= self.free_spin_win_multiplier
+
         if total_win > 0:
             self.credits.set(self.credits.get() + total_win)
             colors = ["light goldenrod", "light cyan", "light pink", "pale green"]
@@ -541,16 +680,45 @@ class SlotMachineApp(tk.Tk):
         if bonus.get("bonusTriggered"):
             coords = [(h["r"], h["c"]) for h in bonus.get("highlights", [])]
             self._highlight_cells(coords, scatter_color)
-            bonus_msg = f"BONUS TRIGGERED ({len(coords)} {self.scatter_symbol})!"
-            if msg:
-                self.message.set(f"{msg}  |  {bonus_msg}")
+            scatter_count = len(coords)
+            award = 0
+
+            if scatter_count >= 5:
+                award = self.free_spins_award_map.get(5, 20)
             else:
-                self.message.set(bonus_msg)
+                award = self.free_spins_award_map.get(scatter_count, 0)
+
+            if award > 0:
+                if not self.in_free_spins:
+                    self.in_free_spins = True
+                    self.free_spins_remaining.set(award)
+                    bonus_msg = f"BONUS TRIGGERED ({len(coords)} {self.scatter_symbol})!"
+                else:
+                    if self.free_spins_retrigger:
+                        self.free_spins_remaining.set(self.free_spins_remaining.get() + award)
+                        bonus_msg = f"RETRIGGER! +{award} FREE SPINS (total {self.free_spins_remaining.get()})"
+                    else:
+                        bonus_msg = f"BONUS TRIGGERED ({scatter_count}) - retriggers disabled"
+                self.message.set(f"{msg}\n{bonus_msg}" if msg else bonus_msg)
 
         self.spinning = False
-        self.spin_btn.state(["!disabled"])
 
-        if self.credits.get() <= 0:
+        if getattr(self, "_current_spin_is_free", False):
+            remaining = max(0, self.free_spins_remaining.get() - 1)
+            self.free_spins_remaining.set(remaining)
+
+        if self.free_spins_remaining.get() > 0 and self.in_free_spins:
+            self.spin_btn.state(["disabled"])
+            self.after(600, self.start_spin)
+            self.message.set(f"FREE SPIN ({self.free_spins_remaining.get()} left)...")
+        else:
+            if self.in_free_spins:
+                self.in_free_spins = False
+                msg = self.message.get()
+                self.message.set((msg + "\nFREE SPINS COMPLETE!") if msg else "FREE SPINS COMPLETE!")
+            self.spin_btn.state(["!disabled"])
+
+        if self.credits.get() <= 0 and not self.in_free_spins:
             self.message.set("Out of credits! Press Reset.")
 
     def evaluate_wins(self):
